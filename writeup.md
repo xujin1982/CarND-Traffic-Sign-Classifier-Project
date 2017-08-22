@@ -1,14 +1,10 @@
 #**Traffic Sign Recognition** 
-
-##Writeup Template
-
-###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
 ---
 
 **Build a Traffic Sign Recognition Project**
 
 The goals / steps of this project are the following:
+
 * Load the data set (see below for links to the project data set)
 * Explore, summarize and visualize the data set
 * Design, train and test a model architecture
@@ -19,11 +15,11 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./examples/visualization.jpg "Visualization"
-[image2]: ./examples/grayscale.jpg "Grayscaling"
-[image3]: ./examples/random_noise.jpg "Random Noise"
-[image4]: ./examples/placeholder.png "Traffic Sign 1"
-[image5]: ./examples/placeholder.png "Traffic Sign 2"
+[image1]: ./examples/visualization.png "Visualization"
+[image2]: ./examples/rbg2gray.png "Grayscaling"
+[image3]: ./examples/augmented.png "Augmented Image"
+[image4]: ./examples/blurred.png "Blurred Image"
+[image5]: ./examples/preprocessing.png "Visualization Preprocessing"
 [image6]: ./examples/placeholder.png "Traffic Sign 3"
 [image7]: ./examples/placeholder.png "Traffic Sign 4"
 [image8]: ./examples/placeholder.png "Traffic Sign 5"
@@ -34,65 +30,78 @@ The goals / steps of this project are the following:
 ---
 ###Writeup / README
 
-####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one. You can submit your writeup as markdown or pdf. You can use this template as a guide for writing the report. The submission includes the project code.
+####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one. 
 
 You're reading it! and here is a link to my [project code](https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project/blob/master/Traffic_Sign_Classifier.ipynb)
 
 ###Data Set Summary & Exploration
 
-####1. Provide a basic summary of the data set. In the code, the analysis should be done using python, numpy and/or pandas methods rather than hardcoding results manually.
+####1. Provide a basic summary of the data set.
 
-I used the pandas library to calculate summary statistics of the traffic
+I used the numpy library to calculate summary statistics of the traffic
 signs data set:
 
-* The size of training set is ?
-* The size of the validation set is ?
-* The size of test set is ?
-* The shape of a traffic sign image is ?
-* The number of unique classes/labels in the data set is ?
+* The size of training set is 34799
+* The size of the validation set is 4410
+* The size of test set is 12630
+* The shape of a traffic sign image is (32, 32)
+* The number of unique classes/labels in the data set is 43
 
-####2. Include an exploratory visualization of the dataset.
+####2. Visualize and count the number of each class of the dataset.
 
-Here is an exploratory visualization of the data set. It is a bar chart showing how the data ...
+Here is an exploratory visualization of the original data set. It is a bar chart showing how the data distributed.
 
 ![alt text][image1]
 
 ###Design and Test a Model Architecture
 
-####1. Describe how you preprocessed the image data. What techniques were chosen and why did you choose these techniques? Consider including images showing the output of each preprocessing technique. Pre-processing refers to techniques such as converting to grayscale, normalization, etc. (OPTIONAL: As described in the "Stand Out Suggestions" part of the rubric, if you generated additional data for training, describe why you decided to generate additional data, how you generated the data, and provide example images of the additional data. Then describe the characteristics of the augmented training set like number of images in the set, number of images for each class, etc.)
+####1. Describe how you preprocessed the image data.
 
-As a first step, I decided to convert the images to grayscale because ...
+As a first step, I decided to convert the images to grayscale because it not only reduces the input volume (32x32x3 -> 32x32x1), but also keep all the information for artificial identification. 
 
 Here is an example of a traffic sign image before and after grayscaling.
 
 ![alt text][image2]
 
-As a last step, I normalized the image data because ...
+Then I utilize [ImageDataGenerator](https://keras.io/preprocessing/image/) to generate fake data based on the original data set. The ImageDataGenerator can generate fake data by randomly rotating (< 17 degrees), randomly shifting in width and height (< 20%) and randomly zooming (< 15%). Also, to deal with the unbalanced training data set, I generated 1000 more augmented images for the classes which have less than 1000 samples.
 
-I decided to generate additional data because ... 
-
-To add more data to the the data set, I used the following techniques because ... 
-
-Here is an example of an original image and an augmented image:
+Here is an example of a traffic sign image and an augmented image.
 
 ![alt text][image3]
 
-The difference between the original data set and the augmented data set is the following ... 
+Furthermore, I implement Gaussian Blur to generate more blurred images for both original and augmented images.
 
+Here is an example of a traffic sign image and an blurred image.
 
-####2. Describe what your final model architecture looks like including model type, layers, layer sizes, connectivity, etc.) Consider including a diagram and/or table describing the final model.
+![alt text][image4]
+
+As a last step, I normalized the image data because the means and standard deviations of features will have difference without normalization, the learning progress of CNN will correct the difference. If the learning rate is defined as a scalar, the learning progress may cause overcompensating in one weight dimension as well as undercompensating in another.
+
+I decided to generate additional data for minority class because the unbalance date set will cause the model tend to classify most results to the majority class based on the metrics of prediction accuracy only.
+
+Finally, the volume of the training data set is 172,978. Here is an exploratory visualization of the preprocesing data set. It is a bar chart showing how the data distributed.
+
+![alt text][image5]
+
+####2. Describe what your final model architecture.
 
 My final model consisted of the following layers:
 
 | Layer         		|     Description	        					| 
 |:---------------------:|:---------------------------------------------:| 
 | Input         		| 32x32x3 RGB image   							| 
-| Convolution 3x3     	| 1x1 stride, same padding, outputs 32x32x64 	|
-| RELU					|												|
-| Max pooling	      	| 2x2 stride,  outputs 16x16x64 				|
-| Convolution 3x3	    | etc.      									|
-| Fully connected		| etc.        									|
-| Softmax				| etc.        									|
+| Convolution 5x5     	| 1x1 stride, valid padding, outputs 28x28x32 	|
+| RELU					| act1											|
+| Max pooling	      	| 2x2 stride,  outputs 14x14x32 				|
+| Dropout				| keep probability = 0.75						|
+| Convolution 5x5	    | 1x1 stride, valid padding, outputs 10x10x64	|
+| RELU					| act2											|
+| Max pooling	      	| 2x2 stride,  outputs 5x5x64 					|
+| Dropout				| keep probability = 0.75						|
+| Fully connected 0		| nodes = 5x5x64 = 1600							|
+| Fully connected 1		| nodes = 800									|
+| Fully connected 2		| nodes = 200									|
+| Softmax				| logits = 43  									|
 |						|												|
 |						|												|
  
